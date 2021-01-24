@@ -13,9 +13,32 @@
 
 package main
 
+import "os/signal"
+import "os"
+import "fmt"
+import "syscall"
+
 func main() {
+	efforts_to_stop := 0
 	// Create a process
 	proc := MockProcess{}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			if sig == syscall.SIGINT {
+				if efforts_to_stop == 0 {
+					fmt.Println("\ntrying to stop gracefully")
+					efforts_to_stop += 1
+					go proc.Stop()
+				} else {
+					fmt.Println("\nokay...")
+					os.Exit(-1)
+				}
+			}
+		}
+	}()
 
 	// Run the process (blocking)
 	proc.Run()
