@@ -11,7 +11,7 @@
 package main
 
 import "time"
-
+import "fmt"
 // User defines the UserModel. Use this to check whether a User is a
 // Premium user or not
 type User struct {
@@ -20,22 +20,38 @@ type User struct {
 	TimeUsed  int64 // in seconds
 }
 
+var elapsed_time map[int]float64
 // HandleRequest runs the processes requested by users. Returns false
 // if process had to be killed
 func HandleRequest(process func(), u *User) bool {
+	
 	var start <-chan time.Time
-	start = time.Tick(10*time.Second)
-	process()
+	if _,ok:=elapsed_time[u.ID]; !ok {
+		elapsed_time[u.ID] = 0.0
+	}
+	if elapsed_time[u.ID]>=10.0 {
+		return false
+	} else {
+		start = time.Tick((time.Duration)((10.0-elapsed_time[u.ID])*1000000000))
+		time_start := time.Now()
+		process()
 	for {
 		select {
-			case <-start:
+			case <-start: {
+					elapsed_time[u.ID] = 0.0
 					return false
-			default:
+			}
+			default: {
+					elapsed_time[u.ID] += float64(time.Now().Sub(time_start)/1000000000.0)
+					fmt.Println("%f", elapsed_time[u.ID])
 					return true
+			}
 		}
 	}
 	return true
+	}
 }
 func main() {
+	elapsed_time = make(map[int]float64)
 	RunMockServer()
 }
