@@ -10,8 +10,8 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"sync"
+	"time"
 )
 
 var wg sync.WaitGroup
@@ -20,7 +20,7 @@ func producer(stream Stream, datach chan Tweet) {
 	for {
 		tweet, err := stream.Next()
 		if err == ErrEOF {
-      return
+			return
 		}
 
 		datach <- *tweet
@@ -29,22 +29,20 @@ func producer(stream Stream, datach chan Tweet) {
 
 func consumer(datach chan Tweet, wg sync.WaitGroup) {
 	defer wg.Done()
+	wg.Add(1)
 	for {
 		select {
 
-			case t:= <-datach: {
+		case t := <-datach:
+			{
 				if t.IsTalkingAboutGo() {
 					fmt.Println(t.Username, "\ttweets about golang")
-					wg.Add(1)
-					go consumer(datach, wg)
 				} else {
 					fmt.Println(t.Username, "\tdoes not tweet about golang")
-					wg.Add(1)
-					go consumer(datach, wg)
 				}
 			}
-			default:
-				return
+		default:
+			return
 		}
 	}
 }
@@ -59,7 +57,9 @@ func main() {
 	producer(stream, datach)
 
 	// Consumer
-	consumer(datach, wg)
+	for i := 0; i < 4000; i++ {
+		go consumer(datach, wg)
+	}
 
 	fmt.Printf("Process took %s\n", time.Since(start))
 }
