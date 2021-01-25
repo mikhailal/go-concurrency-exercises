@@ -27,8 +27,8 @@ import (
 // SessionManager keeps track of all sessions from creation, updating
 // to destroying.
 type SessionManager struct {
-	sessions map[string]Session
-	mt       sync.Mutex
+	sessions         map[string]Session
+	sessionmgr_mutex sync.Mutex
 }
 
 // Session stores the session's data
@@ -49,8 +49,8 @@ func NewSessionManager() *SessionManager {
 
 // CreateSession creates a new session and returns the sessionID
 func (m *SessionManager) CreateSession() (string, error) {
-	defer m.mt.Unlock()
-	m.mt.Lock()
+	defer m.sessionmgr_mutex.Unlock()
+	m.sessionmgr_mutex.Lock()
 	sessionID, err := MakeSessionID()
 	if err != nil {
 		return "", err
@@ -79,13 +79,13 @@ const timeout = 25 * poll_time
 
 func (m *SessionManager) Autoclean() {
 	for {
-		m.mt.Lock()
+		m.sessionmgr_mutex.Lock()
 		for key, val := range m.sessions {
 			if time.Now().Sub(val.last_active) > timeout {
 				m.DeleteSession(key)
 			}
 		}
-		m.mt.Unlock()
+		m.sessionmgr_mutex.Unlock()
 		time.Sleep(poll_time)
 	}
 }
@@ -97,10 +97,9 @@ var ErrSessionNotFound = errors.New("SessionID does not exists")
 // GetSessionData returns data related to session if sessionID is
 // found, errors otherwise
 func (m *SessionManager) GetSessionData(sessionID string) (map[string]interface{}, error) {
-	//	defer m.mt.Unlock()
-	m.mt.Lock()
+	m.sessionmgr_mutex.Lock()
 	session, ok := m.sessions[sessionID]
-	m.mt.Unlock()
+	m.sessionmgr_mutex.Unlock()
 	if !ok {
 		return nil, ErrSessionNotFound
 	}
@@ -109,7 +108,7 @@ func (m *SessionManager) GetSessionData(sessionID string) (map[string]interface{
 
 // UpdateSessionData overwrites the old session data with the new one
 func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]interface{}) error {
-	m.mt.Lock()
+	m.sessionmgr_mutex.Lock()
 	_, ok := m.sessions[sessionID]
 	if !ok {
 		return ErrSessionNotFound
@@ -120,7 +119,7 @@ func (m *SessionManager) UpdateSessionData(sessionID string, data map[string]int
 		Data:        data,
 		last_active: time.Now(),
 	}
-	m.mt.Unlock()
+	m.sessionmgr_mutex.Unlock()
 	return nil
 }
 
