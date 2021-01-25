@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+
 var throttle <-chan time.Time
 
 // Crawl uses `fetcher` from the `mockfetcher.go` file to imitate a
