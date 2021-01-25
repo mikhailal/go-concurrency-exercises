@@ -43,6 +43,7 @@ func NewSessionManager() *SessionManager {
 		sessions: make(map[string]Session),
 	}
 
+	go m.Autoclean()
 	return m
 }
 
@@ -60,7 +61,6 @@ func (m *SessionManager) CreateSession() (string, error) {
 		last_active: time.Now(),
 	}
 
-	go m.Autoclean()
 	return sessionID, nil
 }
 
@@ -74,16 +74,19 @@ func (m *SessionManager) DeleteSession(sessionID string) error {
 	return nil
 }
 
+const poll_time = 250 * time.Millisecond
+const timeout = 25 * poll_time
+
 func (m *SessionManager) Autoclean() {
 	for {
 		m.mt.Lock()
 		for key, val := range m.sessions {
-			if time.Now().Sub(val.last_active) > 6900*time.Millisecond {
+			if time.Now().Sub(val.last_active) > timeout {
 				m.DeleteSession(key)
 			}
 		}
 		m.mt.Unlock()
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(poll_time)
 	}
 }
 
