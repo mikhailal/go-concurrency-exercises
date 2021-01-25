@@ -10,6 +10,7 @@ package main
 
 import "container/list"
 import "sync"
+
 // CacheSize determines how big the cache can grow
 const CacheSize = 100
 
@@ -26,10 +27,10 @@ type page struct {
 
 // KeyStoreCache is a LRU cache for string key-value pairs
 type KeyStoreCache struct {
-	cache map[string]*list.Element
-	pages list.List
+	cache     map[string]*list.Element
+	pages     list.List
 	pages_mtx sync.Mutex
-	load  func(string) string
+	load      func(string) string
 }
 
 // New creates a new KeyStoreCache
@@ -42,7 +43,7 @@ func New(load KeyStoreCacheLoader) *KeyStoreCache {
 
 // Get gets the key from cache, loads it from the source if needed
 func (k *KeyStoreCache) Get(key string) string {
-  defer k.pages_mtx.Unlock()
+	defer k.pages_mtx.Unlock()
 	k.pages_mtx.Lock()
 	if e, ok := k.cache[key]; ok {
 		k.pages.MoveToFront(e)
