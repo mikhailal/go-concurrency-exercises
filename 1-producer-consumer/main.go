@@ -47,17 +47,20 @@ func consumer(datach chan Tweet, wg sync.WaitGroup) {
 	}
 }
 
+const RoutinesNum = 4
+const ChannelSize = 200
+
 func main() {
 	start := time.Now()
 	stream := GetMockStream()
 
-	datach := make(chan Tweet, 200)
+	datach := make(chan Tweet, ChannelSize)
 
 	// Producer
 	producer(stream, datach)
 
 	// Consumer
-	for i := 0; i < 4000; i++ {
+	for i := 0; i < RoutinesNum; i++ {
 		go consumer(datach, wg)
 	}
 
